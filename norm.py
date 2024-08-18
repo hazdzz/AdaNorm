@@ -5,7 +5,7 @@ from torch import Tensor
 
 
 class AdaNorm(nn.Module):
-    def __init__(self, dim, k: float = 0.1, eps: float = 1e-8, bias: bool = False) -> None:
+    def __init__(self, dim, k: float = 0.1, eps: float = 1e-5, bias: bool = False) -> None:
         super(AdaNorm, self).__init__()
         self.k = k
         self.eps = eps
