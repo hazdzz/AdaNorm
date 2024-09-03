@@ -1,24 +1,28 @@
 import torch
 import torch.nn as nn
 import torch.nn.init as init
-from torch import Tensor
+from typing import Union, List, Optional, Tuple
+from torch import Size, Tensor
 
 
 class AdaNorm(nn.Module):
-    def __init__(self, dim, k: float = 0.1, eps: float = 1e-5, bias: bool = False) -> None:
+    def __init__(self, normalized_shape: Union[int, List[int], Size], k: float = 0.1, eps: float = 1e-5, bias: bool = False) -> None:
         super(AdaNorm, self).__init__()
+        if isinstance(normalized_shape, numbers.Integral):
+            normalized_shape = (normalized_shape,)
+        self.normalized_shape = tuple(normalized_shape)
         self.k = k
         self.eps = eps
-        self.scale = nn.Parameter(torch.empty(dim))
+        self.weight = nn.Parameter(torch.empty(self.normalized_shape))
         if bias:
-            self.bias = nn.Parameter(torch.empty(dim))
+            self.bias = nn.Parameter(torch.empty(self.normalized_shape))
         else:
             self.register_parameter('bias', None)
 
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
-        init.ones_(self.scale)
+        init.ones_(self.weight)
         if self.bias is not None:
             init.zeros_(self.bias)
 
@@ -28,7 +32,7 @@ class AdaNorm(nn.Module):
     
         input_norm = (input - mean) * torch.rsqrt(var)
         
-        adanorm = self.scale * (1 - self.k * input_norm) * input_norm
+        adanorm = self.weight * (1 - self.k * input_norm) * input_norm
 
         if self.bias is not None:
             adanorm = adanorm + self.bias
